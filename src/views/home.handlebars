@@ -1,0 +1,18 @@
+<h1 class="text-center">Listado de Productos</h1>
+
+<div class="container my-2 mx-auto text-center">
+  <div class="row">
+    {{#each products}}
+    <div class="col-md-3 my-4">
+      <div class="card alturaCaja img-product">
+        <img src={{thumbnail}} class="card-img-top" alt={{title}} />
+        <div class="card-body">
+          <h6 class="card-text text-center mb-4">{{title}}</h6>
+          <h4 class="text-center">$ {{price}}</h4>          
+        </div>        
+      </div>
+    </div>
+    {{/each}}
+  </div>
+</div>
+
