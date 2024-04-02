@@ -8,6 +8,98 @@ const ProductManager = require('../dao/ProductManager')
 const filenameProd = `${__dirname}/../../productos.json`
 const productsManager = new ProductManager(filenameProd)
 
+router.get('/', async (req, res) => {
+    try {
+        const productos = await productModel.find()
+        console.log(productos)
+        res.status(200).json(productos)  // HTTP 200 OK
+        return
+    }
+    catch (err) {
+        return res.status(400).json({
+            message: err.message
+        })
+    }
+});
+
+router.get('/:pid', async (req, res) => {
+    const { pid } = req.params;
+    try {
+        const producto = await productModel.findById(pid);
+        if (!producto) {
+            res.status(404).json({ error: "Id inexistente!" })  // HTTP 404 => el ID es válido, pero no se encontró ese producto
+            return
+        }
+        res.status(200).json(producto)    // HTTP 200 OK
+    } catch (err) {
+        return res.status(500).json({
+            message: err.message
+        })
+    }
+});
+
+router.post('/', async (req, res) => {
+    try {
+        const {
+            title,
+            description,
+            price,
+            thumbnail,
+            code,
+            stock,
+            status,
+            category
+        } = req.body;
+
+        let result = await productModel.create({
+            title,
+            description,
+            price,
+            thumbnail,
+            code,
+            stock,
+            status,
+            category
+        });
+
+        res.json(result)
+
+    } catch (err) {
+        return res.status(400).json({
+            message: err.message
+        })
+    }
+
+})
+
+router.put('/:pid', async (req, res) => {
+    try {
+        const { pid } = req.params
+        const datosAUpdate = req.body
+
+        const result = await productModel.updateOne({ _id: pid }, datosAUpdate);
+
+        return res.status(200).json(result);
+    } catch (err) {
+        return res.status(400).json({
+            message: err.message
+        })
+    }
+});
+
+router.delete('/:pid', async (req, res) => {
+    try {
+        const { pid } = req.params;
+        await productModel.deleteOne({ _id: pid });
+        res.status(200).json({ message: "Producto Eliminado correctamente" })    // HTTP 200 OK
+    }
+    catch (err) {
+        return res.status(500).json({
+            message: err.message
+        })
+    }
+});
+
 // Middleware para validacion de datos al agregar un producto 
 async function validarNuevoProducto(req, res, next) {
     const product = req.body;
@@ -65,146 +157,69 @@ async function validarNuevoProducto(req, res, next) {
     next()
 }
 
-// Middleware para validacion de datos al actualizar un producto 
-// Si algun dato es vacio no se actualiza
-async function validarProdActualizado(req, res, next) {
-    const { title, description, price, thumbnail, code, stock, status, category } = req.body;
-    let idProd = +req.params.pid
+// // Middleware para validacion de datos al actualizar un producto 
+// // Si algun dato es vacio no se actualiza
+// async function validarProdActualizado(req, res, next) {
+//     const { title, description, price, thumbnail, code, stock, status, category } = req.body;
+//     let idProd = +req.params.pid
 
-    const listadoProductos = await productsManager.getProducts()
-    const codeIndex = listadoProductos.findIndex(e => e.id === idProd);
-    if (codeIndex === -1) {
-        res.status(400).json({ error: "Producto con ID:" + idProd + " not Found" })
-        return
-    }
-    else {
-        if (price !== '') {
-            if (isNaN(price)) {
-                res.status(400).json({ error: "Error. El campo precio es invalido." })
-                return
-            }
-            if (!productsManager.soloNumPositivos(price)) {
-                res.status(400).json({ error: "Precio negativo" })
-                return
-            }
-        }
-        if (stock !== '') {
-            if (isNaN(stock)) {
-                res.status(400).json({ error: "El campo stock es invalido." })
-                return
-            }
-            if (!productsManager.soloNumPositivosYcero(stock)) {
-                res.status(400).json({ error: "Precio negativo" })
-                return
-            }
-        }
-        if (!Array.isArray(thumbnail)) {
-            res.status(400).json({ error: "El campo thumbnail es invalido." })
-            return
-        }
-        else {
-            let rutasValidas = true
-            thumbnail.forEach(ruta => {
-                if (typeof ruta != "string") {
-                    rutasValidas = false;
-                    return;
-                }
-            })
-            if (!rutasValidas) {
-                res.status(400).json({ error: "El campo thumbnail es invalido." })
-                return
-            }
-        }
-        if (code !== '') {
-            if (!productsManager.soloNumYletras(code)) {
-                res.status(400).json({ error: "El campo codigo identificador es invalido." })
-                return
-            }
-        }
-        if (typeof status != "boolean") {
-            res.status(400).json({ error: "El campo status es invalido." })
-            return
-        }
-    }
-    next()
-}
-
-router.get('/', async (req, res) => {    
-    try {
-        // let cantLimite = req.query.limit
-        // if (cantLimite) {
-        //     if (isNaN(cantLimite) || (cantLimite < 0)) {
-        //         // HTTP 400 => hay un error en el request o alguno de sus parámetros
-        //         res.status(400).json({ error: "Invalid limit format" })
-        //         return
-        //     }
-        //     const productos = await productModel.find().limit(cantLimite); 
-        //     res.status(200).json(productos)  // HTTP 200 OK
-        //     return
-        // }
-
-        const productos = await productModel.find()   
-        console.log(productos)    
-        res.status(200).json(productos)  // HTTP 200 OK
-        return
-    }
-    catch (err) {
-        return res.status(400).json({
-            message: err.message
-        })
-    }
-
-    // const productos = await productModel.find().limit(cantLimite);
-
-    // res.status(200).json(productos)  // HTTP 200 OK
-});
-
-router.post('/', async (req, res) => {
-
-    try {
-        const {
-            title,
-            description,
-            price,           
-            thumbnail,
-            code,
-            stock,
-            status,
-            category
-        } = req.body;
-
-        if (!title || !code) {
-            return res.send({
-                status: "Error",
-                error: 'Datos incompletos'
-            });
-        }
-
-        let result = await productModel.create({
-            title,
-            description,
-            price,            
-            thumbnail,
-            code,
-            stock,
-            status,
-            category
-        });
-
-        res.json(result)
-
-        res.send({
-            result: 'sucess',
-            payload: result
-        });
-    } catch (error) {
-        res.send({
-            status: "Error",
-            error: 'Se produjo un error fatal'
-        });
-    }
-
-})
+//     const listadoProductos = await productsManager.getProducts()
+//     const codeIndex = listadoProductos.findIndex(e => e.id === idProd);
+//     if (codeIndex === -1) {
+//         res.status(400).json({ error: "Producto con ID:" + idProd + " not Found" })
+//         return
+//     }
+//     else {
+//         if (price !== '') {
+//             if (isNaN(price)) {
+//                 res.status(400).json({ error: "Error. El campo precio es invalido." })
+//                 return
+//             }
+//             if (!productsManager.soloNumPositivos(price)) {
+//                 res.status(400).json({ error: "Precio negativo" })
+//                 return
+//             }
+//         }
+//         if (stock !== '') {
+//             if (isNaN(stock)) {
+//                 res.status(400).json({ error: "El campo stock es invalido." })
+//                 return
+//             }
+//             if (!productsManager.soloNumPositivosYcero(stock)) {
+//                 res.status(400).json({ error: "Precio negativo" })
+//                 return
+//             }
+//         }
+//         if (!Array.isArray(thumbnail)) {
+//             res.status(400).json({ error: "El campo thumbnail es invalido." })
+//             return
+//         }
+//         else {
+//             let rutasValidas = true
+//             thumbnail.forEach(ruta => {
+//                 if (typeof ruta != "string") {
+//                     rutasValidas = false;
+//                     return;
+//                 }
+//             })
+//             if (!rutasValidas) {
+//                 res.status(400).json({ error: "El campo thumbnail es invalido." })
+//                 return
+//             }
+//         }
+//         if (code !== '') {
+//             if (!productsManager.soloNumYletras(code)) {
+//                 res.status(400).json({ error: "El campo codigo identificador es invalido." })
+//                 return
+//             }
+//         }
+//         if (typeof status != "boolean") {
+//             res.status(400).json({ error: "El campo status es invalido." })
+//             return
+//         }
+//     }
+//     next()
+// }
 
 // router.get('/', async (req, res) => {
 //     let cantLimite = req.query.limit
@@ -273,9 +288,9 @@ router.post('/', async (req, res) => {
 //     res.status(200).json({ message: "Producto Eliminado correctamente" })    // HTTP 200 OK
 // });
 
-const main = async () => {
-    await productsManager.inicialize()
-}
-main()
+// const main = async () => {
+//     await productsManager.inicialize()
+// }
+// main()
 
 module.exports = { router, productsManager, validarNuevoProducto };

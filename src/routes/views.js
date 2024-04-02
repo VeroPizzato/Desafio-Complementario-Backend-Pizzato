@@ -77,6 +77,17 @@ router.get('/newProduct', async (_, res) => {
     })
 });
 
+router.get('/', (_, res) => {
+    res.render('index', {
+        title: 'Aplicación de chat',
+        useWS: true,
+        useSweetAlert: true,
+        scripts: [
+            'index.js'
+        ]
+    })
+})
+
 const main = async () => {
     await productsManager.inicialize()
 }

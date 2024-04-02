@@ -4,7 +4,9 @@ const chatCollection = 'messages';
 
 const chatSchema = new mongoose.Schema({
     user: String,
-    message: String,
+    text: String,
 });
 
 module.exports = mongoose.model(chatCollection, chatSchema);
+
+
