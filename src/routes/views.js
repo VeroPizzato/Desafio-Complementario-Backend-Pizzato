@@ -1,33 +1,39 @@
-const fs = require('fs')
 const { Router } = require('express')
-
 const router = Router()
-
-const ProductManager = require('../dao/ProductManager')
-
-const filenameProd = `${__dirname}/../../productos.json`
-const productsManager = new ProductManager(filenameProd)
-
 const { validarNuevoProducto } = require('./products')
 
-router.get('/home', async (_, res) => {
+router.get('/', async (req, res) => {
     try {
-        const products = await productsManager.getProducts()
-
+        const ProductManager = req.app.get('ProductManager')
+        const products = await ProductManager.getProducts()
         res.render('home', {
             title: 'Home',
             styles: ['productos.css'],
             products
-        });
+        })
     } catch (error) {
-        console.error('Error al al cargar los productos:', error);
+        console.error('Error al al cargar los productos:', error)
     }
 })
 
-router.get('/realtimeproducts', async (_, res) => {
+router.get('/home', async (req, res) => {
     try {
-        const products = await productsManager.getProducts()
+        const ProductManager = req.app.get('ProductManager')
+        const products = await ProductManager.getProducts()
+        res.render('home', {
+            title: 'Home',
+            styles: ['productos.css'],
+            products
+        })
+    } catch (error) {
+        console.error('Error al al cargar los productos:', error)
+    }
+})
 
+router.get('/realtimeproducts', async (req, res) => {
+    try {
+        const ProductManager = req.app.get('ProductManager')
+        const products = await ProductManager.getProducts()
         res.render('realTimeProducts', {
             title: 'Productos en tiempo real',
             styles: ['productos.css'],
@@ -36,15 +42,15 @@ router.get('/realtimeproducts', async (_, res) => {
             scripts: [
                 'realTimeProducts.js'
             ]
-        });
+        })
     } catch (error) {
-        console.error('Error al al cargar los productos en tiempo real:', error);
+        console.error('Error al al cargar los productos en tiempo real:', error)
     }
-});
+})
 
 router.post('/realtimeproducts', validarNuevoProducto, async (req, res) => {
     try {
-        
+        const ProductManager = req.app.get('ProductManager')
         const product = req.body
         // Agregar el producto en el ProductManager
         // Convertir el valor status "true" o "false" a booleano        
@@ -52,7 +58,7 @@ router.post('/realtimeproducts', validarNuevoProducto, async (req, res) => {
         product.thumbnail = ["/images/" + product.thumbnail]
         product.price = +product.price
         product.stock = +product.stock
-        await productsManager.addProduct(
+        await ProductManager.addProduct(
             product.title,
             product.description,
             +product.price,
@@ -60,22 +66,21 @@ router.post('/realtimeproducts', validarNuevoProducto, async (req, res) => {
             product.code,
             +product.stock,
             boolStatus,
-            product.category);
-
+            product.category)      
         // Notificar a los clientes mediante WS que se agrego un producto nuevo             
         req.app.get('ws').emit('newProduct', product)        
         res.redirect('/realtimeproducts')
         // res.status(201).json({ message: "Producto agregado correctamente" })
     } catch (error) {
-        console.error('Error al agregar el producto:', error);
+        console.error('Error al agregar el producto:', error)
     }
-});
+})
 
 router.get('/newProduct', async (_, res) => {
     res.render('newProduct', {
         title: 'Nuevo Producto',
     })
-});
+})
 
 router.get('/', (_, res) => {
     res.render('index', {
@@ -87,10 +92,5 @@ router.get('/', (_, res) => {
         ]
     })
 })
-
-const main = async () => {
-    await productsManager.inicialize()
-}
-main()
 
 module.exports = router

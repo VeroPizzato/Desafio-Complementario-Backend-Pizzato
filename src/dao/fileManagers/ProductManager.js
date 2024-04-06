@@ -14,6 +14,7 @@ class ProductManager {
         try {
             const fileProducts = await fs.promises.readFile(this.path, 'utf-8')
             this.#products = JSON.parse(fileProducts)
+
         }
         catch (err) {
             return []
@@ -31,7 +32,7 @@ class ProductManager {
             if (mayorID <= item.id)
                 mayorID = item.id
         });
-        mayorID = mayorID + 1   
+        mayorID = mayorID + 1
         return mayorID
     }
 
@@ -66,14 +67,14 @@ class ProductManager {
     }
 
     soloNumPositivos = (code) => {
-        return (/^[0-9]+$/.test(code) && (code>0))
+        return (/^[0-9]+$/.test(code) && (code > 0))
     }
 
     soloNumPositivosYcero = (code) => {
-        return (/^[0-9]+$/.test(code) && (code>=0))
+        return (/^[0-9]+$/.test(code) && (code >= 0))
     }
 
-    addProduct = async (title, description, price, thumbnail, code, stock, status, category) => {      
+    addProduct = async (title, description, price, thumbnail, code, stock, status, category) => {
         const product = {
             id: this.#getNuevoId(),
             title,
@@ -96,12 +97,12 @@ class ProductManager {
         await fs.promises.writeFile(this.path, fileProducts)
     }
 
-    updateProduct = async (prodId, producto) => {        
+    updateProduct = async (prodId, producto) => {
         const productIndex = this.#products.findIndex(e => e.id === prodId)
         const newProduct = { ...this.#products[productIndex], ...producto, id: prodId }
         this.#products[productIndex] = newProduct
 
-        await this.#updateProducts()              
+        await this.#updateProducts()
     }
 
     deleteProduct = async (idProd) => {

@@ -1,125 +1,28 @@
 const { Router } = require('express')
-const productModel = require('../dao/models/products.js');
 
 const router = Router()
 
-const ProductManager = require('../dao/ProductManager')
-
-const filenameProd = `${__dirname}/../../productos.json`
-const productsManager = new ProductManager(filenameProd)
-
-router.get('/', async (req, res) => {
-    try {
-        const productos = await productModel.find()
-        console.log(productos)
-        res.status(200).json(productos)  // HTTP 200 OK
-        return
-    }
-    catch (err) {
-        return res.status(400).json({
-            message: err.message
-        })
-    }
-});
-
-router.get('/:pid', async (req, res) => {
-    const { pid } = req.params;
-    try {
-        const producto = await productModel.findById(pid);
-        if (!producto) {
-            res.status(404).json({ error: "Id inexistente!" })  // HTTP 404 => el ID es válido, pero no se encontró ese producto
-            return
-        }
-        res.status(200).json(producto)    // HTTP 200 OK
-    } catch (err) {
-        return res.status(500).json({
-            message: err.message
-        })
-    }
-});
-
-router.post('/', async (req, res) => {
-    try {
-        const {
-            title,
-            description,
-            price,
-            thumbnail,
-            code,
-            stock,
-            status,
-            category
-        } = req.body;
-
-        let result = await productModel.create({
-            title,
-            description,
-            price,
-            thumbnail,
-            code,
-            stock,
-            status,
-            category
-        });
-
-        res.json(result)
-
-    } catch (err) {
-        return res.status(400).json({
-            message: err.message
-        })
-    }
-
-})
-
-router.put('/:pid', async (req, res) => {
-    try {
-        const { pid } = req.params
-        const datosAUpdate = req.body
-
-        const result = await productModel.updateOne({ _id: pid }, datosAUpdate);
-
-        return res.status(200).json(result);
-    } catch (err) {
-        return res.status(400).json({
-            message: err.message
-        })
-    }
-});
-
-router.delete('/:pid', async (req, res) => {
-    try {
-        const { pid } = req.params;
-        await productModel.deleteOne({ _id: pid });
-        res.status(200).json({ message: "Producto Eliminado correctamente" })    // HTTP 200 OK
-    }
-    catch (err) {
-        return res.status(500).json({
-            message: err.message
-        })
-    }
-});
-
 // Middleware para validacion de datos al agregar un producto 
 async function validarNuevoProducto(req, res, next) {
-    const product = req.body;
+    const ProductManager = req.app.get('ProductManager')
+    const product = req.body
     product.price = +product.price
     product.stock = +product.stock
     product.thumbnail = [product.thumbnail]
-    var boolStatus = JSON.parse(product.status);
+    var boolStatus = JSON.parse(product.status)
 
     if (!product.title || !product.description || !product.price || !product.code || !product.stock || !product.category) {
-        return res.status(400).json({ error: 'Todos los campos son obligatorios, salvo la ruta de la imagen' });
+        return res.status(400).json({ error: 'Todos los campos son obligatorios, salvo la ruta de la imagen' })
     }
     if (isNaN(product.price) || isNaN(product.stock)) {
         res.status(400).json({ error: "Invalid number format" })
         return
     }
-    if (!productsManager.soloNumPositivos(product.price)) {
+    if (!ProductManager.soloNumPositivos(product.price)) {
         res.status(400).json({ error: "Precio negativo" })
         return
     }
-    if (!productsManager.soloNumPositivosYcero(product.stock)) {
+    if (!ProductManager.soloNumPositivosYcero(product.stock)) {
         res.status(400).json({ error: "Stock negativo" })
         return
     }
@@ -131,8 +34,8 @@ async function validarNuevoProducto(req, res, next) {
         let rutasValidas = true
         product.thumbnail.forEach(ruta => {
             if (typeof ruta != "string") {
-                rutasValidas = false;
-                return;
+                rutasValidas = false
+                return
             }
         })
         if (!rutasValidas) {
@@ -140,13 +43,13 @@ async function validarNuevoProducto(req, res, next) {
             return
         }
     }
-    const listadoProductos = await productsManager.getProducts()
+    const listadoProductos = await ProductManager.getProducts()
     const codeIndex = listadoProductos.findIndex(e => e.code === product.code)
     if (codeIndex !== -1) {
         res.status(400).json({ error: "Codigo ya existente" })
         return
     }
-    if (!productsManager.soloNumYletras(product.code)) {
+    if (!ProductManager.soloNumYletras(product.code)) {
         res.status(400).json({ error: "El campo codigo identificador es invalido." })
         return
     }
@@ -157,140 +60,149 @@ async function validarNuevoProducto(req, res, next) {
     next()
 }
 
-// // Middleware para validacion de datos al actualizar un producto 
-// // Si algun dato es vacio no se actualiza
-// async function validarProdActualizado(req, res, next) {
-//     const { title, description, price, thumbnail, code, stock, status, category } = req.body;
-//     let idProd = +req.params.pid
+// Middleware para validacion de datos al actualizar un producto 
+// Si algun dato es vacio no se actualiza
+async function validarProdActualizado(req, res, next) {
+    const ProductManager = req.app.get('ProductManager')
+    const { title, description, price, thumbnail, code, stock, status, category } = req.body
+    let idProd = +req.params.pid
 
-//     const listadoProductos = await productsManager.getProducts()
-//     const codeIndex = listadoProductos.findIndex(e => e.id === idProd);
-//     if (codeIndex === -1) {
-//         res.status(400).json({ error: "Producto con ID:" + idProd + " not Found" })
-//         return
-//     }
-//     else {
-//         if (price !== '') {
-//             if (isNaN(price)) {
-//                 res.status(400).json({ error: "Error. El campo precio es invalido." })
-//                 return
-//             }
-//             if (!productsManager.soloNumPositivos(price)) {
-//                 res.status(400).json({ error: "Precio negativo" })
-//                 return
-//             }
-//         }
-//         if (stock !== '') {
-//             if (isNaN(stock)) {
-//                 res.status(400).json({ error: "El campo stock es invalido." })
-//                 return
-//             }
-//             if (!productsManager.soloNumPositivosYcero(stock)) {
-//                 res.status(400).json({ error: "Precio negativo" })
-//                 return
-//             }
-//         }
-//         if (!Array.isArray(thumbnail)) {
-//             res.status(400).json({ error: "El campo thumbnail es invalido." })
-//             return
-//         }
-//         else {
-//             let rutasValidas = true
-//             thumbnail.forEach(ruta => {
-//                 if (typeof ruta != "string") {
-//                     rutasValidas = false;
-//                     return;
-//                 }
-//             })
-//             if (!rutasValidas) {
-//                 res.status(400).json({ error: "El campo thumbnail es invalido." })
-//                 return
-//             }
-//         }
-//         if (code !== '') {
-//             if (!productsManager.soloNumYletras(code)) {
-//                 res.status(400).json({ error: "El campo codigo identificador es invalido." })
-//                 return
-//             }
-//         }
-//         if (typeof status != "boolean") {
-//             res.status(400).json({ error: "El campo status es invalido." })
-//             return
-//         }
-//     }
-//     next()
-// }
+    const listadoProductos = await ProductManager.getProducts()
+    const codeIndex = listadoProductos.findIndex(e => e.id === idProd)
+    if (codeIndex === -1) {
+        res.status(400).json({ error: "Producto con ID:" + idProd + " not Found" })
+        return
+    }
+    else {
+        if (price !== '') {
+            if (isNaN(price)) {
+                res.status(400).json({ error: "Error. El campo precio es invalido." })
+                return
+            }
+            if (!ProductManager.soloNumPositivos(price)) {
+                res.status(400).json({ error: "Precio negativo" })
+                return
+            }
+        }
+        if (stock !== '') {
+            if (isNaN(stock)) {
+                res.status(400).json({ error: "El campo stock es invalido." })
+                return
+            }
+            if (!ProductManager.soloNumPositivosYcero(stock)) {
+                res.status(400).json({ error: "Precio negativo" })
+                return
+            }
+        }
+        if (!Array.isArray(thumbnail)) {
+            res.status(400).json({ error: "El campo thumbnail es invalido." })
+            return
+        }
+        else {
+            let rutasValidas = true
+            thumbnail.forEach(ruta => {
+                if (typeof ruta != "string") {
+                    rutasValidas = false
+                    return
+                }
+            })
+            if (!rutasValidas) {
+                res.status(400).json({ error: "El campo thumbnail es invalido." })
+                return
+            }
+        }
+        if (code !== '') {
+            if (!ProductManager.soloNumYletras(code)) {
+                res.status(400).json({ error: "El campo codigo identificador es invalido." })
+                return
+            }
+        }
+        if (typeof status != "boolean") {
+            res.status(400).json({ error: "El campo status es invalido." })
+            return
+        }
+    }
+    next()
+}
 
-// router.get('/', async (req, res) => {
-//     let cantLimite = req.query.limit
+router.get('/', async (req, res) => {
+    try {
+        const ProductManager = req.app.get('ProductManager')
+        let cantLimite = req.query.limit
+        const productos = await ProductManager.getProducts()
+        let prodFiltrados = []
+        if (cantLimite) {
+            if (isNaN(cantLimite) || (cantLimite < 0)) {
+                // HTTP 400 => hay un error en el request o alguno de sus parámetros
+                res.status(400).json({ error: "Invalid limit format" })
+                return
+            }
+            prodFiltrados = productos.slice(0, cantLimite)
+        }
+        else prodFiltrados = productos        
+        res.status(200).json(prodFiltrados)  // HTTP 200 OK
+        return
+    }
+    catch (err) {
+        return res.status(400).json({
+            message: err.message
+        })
+    }
+})
 
-//     const listadoProductos = await productsManager.getProducts()
-//     let prodFiltrados = []
+router.get('/:pid', async (req, res) => {
+    const { pid } = req.params
+    try {
+        const ProductManager = req.app.get('ProductManager')
+        const producto = await ProductManager.getProductById(pid)
+        if (!producto) {
+            res.status(404).json({ error: "Id inexistente!" })  // HTTP 404 => el ID es válido, pero no se encontró ese producto
+            return
+        }
+        res.status(200).json(producto)    // HTTP 200 OK
+    } catch (err) {
+        return res.status(500).json({
+            message: err.message
+        })
+    }
+})
 
-//     if (cantLimite) {
-//         if (isNaN(cantLimite) || (cantLimite < 0)) {
-//             // HTTP 400 => hay un error en el request o alguno de sus parámetros
-//             res.status(400).json({ error: "Invalid limit format" })
-//             return
-//         }
-//         prodFiltrados = listadoProductos.slice(0, cantLimite)
-//     }
-//     else prodFiltrados = listadoProductos
+router.post('/', validarNuevoProducto, async (req, res) => {  
+    const ProductManager = req.app.get('ProductManager')
+    //const producto = req.body   
+    // await ProductManager.addProduct(producto)
+    const { title, description, price, thumbnail, code, stock, status, category } = req.body  
+    await ProductManager.addProduct(title, description, price, thumbnail, code, stock, status, category)
+    return res.status(200).json({ success: true })
+})
 
-//     res.status(200).json(prodFiltrados)  // HTTP 200 OK
-// })
+router.put('/:pid', validarProdActualizado, async (req, res) => {
+    try {
+        const ProductManager = req.app.get('ProductManager')
+        const { pid } = req.params
+        const datosAUpdate = req.body
+        const result = ProductManager.updateProduct(pid, datosAUpdate)
+        return res.status(200).json(result)
+    } catch (err) {
+        return res.status(400).json({
+            message: err.message
+        })
+    }
+})
 
-// router.get('/:pid', (req, res) => {
-//     const productId = +req.params.pid
+router.delete('/:pid', async (req, res) => {
+    try {
+        const ProductManager = req.app.get('ProductManager')
+        const { pid } = req.params
+        await ProductManager.deleteProduct(pid)
+        res.status(200).json({ message: "Producto Eliminado correctamente" })    // HTTP 200 OK
+    }
+    catch (err) {
+        return res.status(500).json({
+            message: err.message
+        })
+    }
+})
 
-//     if (isNaN(productId)) {
-//         // HTTP 400 => hay un error en el request o alguno de sus parámetros
-//         res.status(400).json({ error: "Invalid ID format" })
-//         return
-//     }
+module.exports = { router, validarNuevoProducto }
 
-//     const productByID = productsManager.getProductById(productId)
-//     if (!productByID) {
-//         res.status(404).json({ error: "Id inexistente!" })  // HTTP 404 => el ID es válido, pero no se encontró ese producto
-//         return
-//     }
-//     res.status(200).json(productByID)    // HTTP 200 OK
-// })
-
-// router.post('/', validarNuevoProducto, async (req, res) => {
-//     const producto = req.body
-
-//     await productsManager.addProduct(producto.title, producto.description, producto.price, producto.thumbnail, producto.code, producto.stock, producto.status, producto.category)
-
-//     res.status(201).json({ message: `Producto con Id ${producto.id} agregado correctamente` })
-// })
-
-// router.put('/:pid', validarProdActualizado, async (req, res) => {
-//     const productID = +req.params.pid
-//     const producto = req.body
-
-//     await productsManager.updateProduct(productID, producto);
-
-//     return res.status(200).json({ message: `Producto con Id ${producto.id} actualizado correctamente` });
-// });
-
-// router.delete('/:pid', async (req, res) => {
-//     let idProd = +req.params.pid;
-//     const listadoProductos = await productsManager.getProducts()
-//     const codeIndex = listadoProductos.findIndex(e => e.id === idProd);
-//     if (codeIndex === -1) {
-//         res.status(400).json({ error: "Producto con ID:" + idProd + " not Found" })
-//         return
-//     }
-//     else {
-//         await productsManager.deleteProduct(idProd);
-//     }
-//     res.status(200).json({ message: "Producto Eliminado correctamente" })    // HTTP 200 OK
-// });
-
-// const main = async () => {
-//     await productsManager.inicialize()
-// }
-// main()
-
-module.exports = { router, productsManager, validarNuevoProducto };
