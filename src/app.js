@@ -114,7 +114,7 @@ const main = async () => {
             } catch (error) {
                 console.error('Error deleting product:', error);
             }
-        });
+        })
 
     })
 }

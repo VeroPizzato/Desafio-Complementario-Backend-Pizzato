@@ -1,13 +1,10 @@
 const ProductModel = require('../models/products')
 
 class ProductManager {
-
-    #products
+ 
     static #ultimoIdProducto = 1
 
-    constructor() {
-        this.#products = []
-     }
+    constructor() {}
 
     inicialize = async () => {
         // No hacer nada
@@ -16,14 +13,14 @@ class ProductManager {
             throw new Error('must connect to mongodb!')
         }
         else {
-            this.#products = await this.getProducts()
-            ProductManager.#ultimoIdProducto = this.#getNuevoIdInicio()
+            const products = await this.getProducts()
+            ProductManager.#ultimoIdProducto = this.#getNuevoIdInicio(products)
         }
     }
 
-    #getNuevoIdInicio = () => {
+    #getNuevoIdInicio = (products) => {
         let mayorID = 1
-        this.#products.forEach(item => {
+        products.forEach(item => {
             if (mayorID <= item.id)
                 mayorID = item.id
         });
@@ -34,7 +31,7 @@ class ProductManager {
     getProducts = async () => {
         try {
             const products = await ProductModel.find()
-            return products.map(d => d.toObject({ virtuals: true }))
+            return products.map(d => d.toObject({ virtuals: true }))           
         }
         catch (err) {
             return []
@@ -42,7 +39,13 @@ class ProductManager {
     }
 
     getProductById = async (idProd) => {
-        const producto = await ProductModel.findOne({ _id: idProd })        
+        const producto = await ProductModel.findOne({ id: idProd })
+        if (producto)
+            return producto
+        else {
+            console.error(`Producto con ID: ${id} Not Found`)
+            return
+        }
     }
 
     #getNuevoId() {
@@ -62,9 +65,9 @@ class ProductManager {
     soloNumPositivosYcero = (code) => {
         return (/^[0-9]+$/.test(code) && (code >= 0))
     }
-   
-    addProduct = async(title, description, price, thumbnail, code, stock, status, category) => {        
-        let result = await ProductModel.create({
+
+    addProduct = async (title, description, price, thumbnail, code, stock, status, category) => {
+        let product = await ProductModel.create({
             id: this.#getNuevoId(),
             title,
             description,
@@ -74,14 +77,14 @@ class ProductManager {
             stock,
             status,
             category
-        })        
+        })       
     }
 
     updateProduct = async (prodId, producto) => {
-        await ProductModel.updateOne({ _id: prodId }, producto)
+        await ProductModel.updateOne({ id: prodId }, producto)
     }
 
-    deleteProduct = async (idProd) => {        
+    deleteProduct = async (idProd) => {
         await ProductModel.deleteOne({ id: idProd })
     }
 }
