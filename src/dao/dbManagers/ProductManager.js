@@ -2,7 +2,12 @@ const ProductModel = require('../models/products')
 
 class ProductManager {
 
-    constructor() { }
+    #products
+    static #ultimoIdProducto = 1
+
+    constructor() {
+        this.#products = []
+     }
 
     inicialize = async () => {
         // No hacer nada
@@ -10,6 +15,20 @@ class ProductManager {
         if (ProductModel.db.readyState !== 1) {
             throw new Error('must connect to mongodb!')
         }
+        else {
+            this.#products = await this.getProducts()
+            ProductManager.#ultimoIdProducto = this.#getNuevoIdInicio()
+        }
+    }
+
+    #getNuevoIdInicio = () => {
+        let mayorID = 1
+        this.#products.forEach(item => {
+            if (mayorID <= item.id)
+                mayorID = item.id
+        });
+        mayorID = mayorID + 1
+        return mayorID
     }
 
     getProducts = async () => {
@@ -22,8 +41,14 @@ class ProductManager {
         }
     }
 
-    getProductById = async (id) => {
-        const producto = await ProductModel.findOne({ id })        
+    getProductById = async (idProd) => {
+        const producto = await ProductModel.findOne({ _id: idProd })        
+    }
+
+    #getNuevoId() {
+        const id = ProductManager.#ultimoIdProducto
+        ProductManager.#ultimoIdProducto++
+        return id
     }
 
     soloNumYletras = (code) => {
@@ -40,6 +65,7 @@ class ProductManager {
    
     addProduct = async(title, description, price, thumbnail, code, stock, status, category) => {        
         let result = await ProductModel.create({
+            id: this.#getNuevoId(),
             title,
             description,
             price,
@@ -56,7 +82,7 @@ class ProductManager {
     }
 
     deleteProduct = async (idProd) => {        
-        await ProductModel.deleteOne({ _id: idProd })
+        await ProductModel.deleteOne({ id: idProd })
     }
 }
 

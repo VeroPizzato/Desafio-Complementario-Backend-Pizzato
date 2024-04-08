@@ -107,8 +107,7 @@ const main = async () => {
                 const id = parseInt(productId);               
                 if (isNaN(id)) {
                     throw new Error('Invalid productId: ' + productId);
-                }
-                console.log(productId)
+                }                
                 await ProductManager.deleteProduct(id);
                 // Emitir evento 'productDeleted' a los clientes
                 io.emit('productDeleted', id);
