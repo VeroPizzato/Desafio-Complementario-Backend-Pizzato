@@ -38,12 +38,12 @@ class ProductManager {
         }
     }
 
-    getProductById = async (idProd) => {
-        const producto = await ProductModel.findOne({ id: idProd })
+    getProductById = async (idProd) => {       
+        const producto = await ProductModel.findOne({ id: idProd })       
         if (producto)
             return producto
         else {
-            console.error(`Producto con ID: ${id} Not Found`)
+            console.error(`Producto con ID: ${idProd} Not Found`)
             return
         }
     }

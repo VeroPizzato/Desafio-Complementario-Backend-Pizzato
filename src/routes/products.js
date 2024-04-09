@@ -166,7 +166,7 @@ router.get('/:pid', async (req, res) => {
         res.status(200).json(producto)    // HTTP 200 OK
     } catch (err) {
         return res.status(500).json({
-            message: err.message
+            message: err.message 
         })
     }
 })
@@ -187,6 +187,11 @@ router.put('/:pid', validarProdActualizado, async (req, res) => {
             res.status(400).json({ error: "Invalid number format" })
             return
         }
+        const producto = await ProductManager.getProductById(prodId)
+        if (!producto) {
+            res.status(404).json({ error: "Id inexistente!" })  // HTTP 404 => el ID es válido, pero no se encontró ese producto
+            return
+        }
         const result = ProductManager.updateProduct(prodId, datosAUpdate)
         return res.status(200).json(result)
     } catch (err) {
@@ -202,6 +207,11 @@ router.delete('/:pid', async (req, res) => {
         const prodId = +req.params.pid  
         if (isNaN(prodId)){
             res.status(400).json({ error: "Invalid number format" })
+            return
+        }
+        const producto = await ProductManager.getProductById(prodId)
+        if (!producto) {
+            res.status(404).json({ error: "Id inexistente!" })  // HTTP 404 => el ID es válido, pero no se encontró ese producto
             return
         }
         await ProductManager.deleteProduct(prodId)
