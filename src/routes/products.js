@@ -181,9 +181,13 @@ router.post('/', validarNuevoProducto, async (req, res) => {
 router.put('/:pid', validarProdActualizado, async (req, res) => {
     try {
         const ProductManager = req.app.get('ProductManager')
-        const { pid } = req.params
+        const prodId = +req.params.pid        
         const datosAUpdate = req.body
-        const result = ProductManager.updateProduct(pid, datosAUpdate)
+        if (isNaN(prodId)){
+            res.status(400).json({ error: "Invalid number format" })
+            return
+        }
+        const result = ProductManager.updateProduct(prodId, datosAUpdate)
         return res.status(200).json(result)
     } catch (err) {
         return res.status(400).json({
@@ -195,8 +199,12 @@ router.put('/:pid', validarProdActualizado, async (req, res) => {
 router.delete('/:pid', async (req, res) => {
     try {
         const ProductManager = req.app.get('ProductManager')
-        const { pid } = req.params
-        await ProductManager.deleteProduct(pid)
+        const prodId = +req.params.pid  
+        if (isNaN(prodId)){
+            res.status(400).json({ error: "Invalid number format" })
+            return
+        }
+        await ProductManager.deleteProduct(prodId)
         res.status(200).json({ message: "Producto Eliminado correctamente" })    // HTTP 200 OK
     }
     catch (err) {
