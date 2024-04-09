@@ -144,17 +144,21 @@ router.get('/', async (req, res) => {
         return
     }
     catch (err) {
-        return res.status(400).json({
+        return res.status(500).json({
             message: err.message
         })
     }
 })
 
-router.get('/:pid', async (req, res) => {
-    const { pid } = req.params
-    try {
+router.get('/:pid', async (req, res) => {    
+    try {        
         const ProductManager = req.app.get('ProductManager')
-        const producto = await ProductManager.getProductById(pid)
+        const prodId  = +req.params.pid  
+        if (isNaN(prodId)){
+            res.status(400).json({ error: "Invalid number format" })
+            return
+        }
+        const producto = await ProductManager.getProductById(prodId)
         if (!producto) {
             res.status(404).json({ error: "Id inexistente!" })  // HTTP 404 => el ID es válido, pero no se encontró ese producto
             return
@@ -168,12 +172,10 @@ router.get('/:pid', async (req, res) => {
 })
 
 router.post('/', validarNuevoProducto, async (req, res) => {  
-    const ProductManager = req.app.get('ProductManager')
-    //const producto = req.body   
-    // await ProductManager.addProduct(producto)
+    const ProductManager = req.app.get('ProductManager')   
     const { title, description, price, thumbnail, code, stock, status, category } = req.body  
     await ProductManager.addProduct(title, description, price, thumbnail, code, stock, status, category)
-    return res.status(200).json({ success: true })
+    return res.status(201).json({ success: true })
 })
 
 router.put('/:pid', validarProdActualizado, async (req, res) => {
