@@ -82,13 +82,13 @@ router.get('/newProduct', async (_, res) => {
     })
 })
 
-router.get('/', (_, res) => {
-    res.render('index', {
+router.get('/chat', (_, res) => {
+    res.render('chat', {
         title: 'Aplicación de chat',
         useWS: true,
         useSweetAlert: true,
         scripts: [
-            'index.js'
+            'chat.js'
         ]
     })
 })
