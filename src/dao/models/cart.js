@@ -8,7 +8,7 @@ const cartSchema = new mongoose.Schema({
         requied: true,
         unique: true
     },
-    arrayCart: [{ productId: String, quantity: Number }]    
+    arrayCart: [{ productId: Number, quantity: Number }]    
 });
 
 module.exports = mongoose.model(cartCollection, cartSchema);

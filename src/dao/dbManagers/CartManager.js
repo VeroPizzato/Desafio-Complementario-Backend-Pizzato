@@ -60,11 +60,7 @@ class CartManager {
             arrayCart
         })
         console.log(nuevoCarrito)
-    }
-
-    deleteProductToCart = async (pid) => {
-        let result = await CartModel.deleteOne({ id: pid })
-    }
+    }  
 }
 
 module.exports = CartManager
