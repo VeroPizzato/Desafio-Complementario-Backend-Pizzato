@@ -5,8 +5,7 @@ const router = Router()
 // // Middleware para validacion de datos al agregar un carrito 
 async function validarNuevoCarrito(req, res, next) {
     const ProductManager = req.app.get('ProductManager')
-    const { arrayCart } = req.body
-    console.log(arrayCart)
+    const { arrayCart } = req.body   
     arrayCart.forEach(producto => {
         const prod = ProductManager.getProductById(producto.id)
         if (!prod) {
@@ -50,7 +49,7 @@ async function ValidarProductoExistente(req, res, next) {
 router.get('/', async (req, res) => {
     try {
         const CartManager = req.app.get('CartManager')
-        const carts = await CartManager.getCarts()
+        const carts = await CartManager.getCarts()    
         res.status(200).json(carts)  // HTTP 200 OK
         return
     }
@@ -87,45 +86,16 @@ router.post('/', validarNuevoCarrito, async (req, res) => {
     }
 })
 
-// router.post('/:cid/product/:pid', ValidarCarritoExistente, ValidarProductoExistente, async (req, res) => {
-//     try {
-//         const CartManager = req.app.get('CartManager')
-//         let idCart = +req.params.cid;
-//         let idProd = +req.params.pid;
-//         let quantity = 1;
-
-//         await CartManager.addProductToCart(idCart, idProd, quantity);
-
-//         res.status(200).json(`Se agregaron ${quantity} producto/s con ID ${idProd} al carrito con ID ${idCart}`)    // HTTP 200 OK
-//     } catch (err) {
-//         return res.status(500).json({
-//             message: err.message
-//         })
-//     }
-// })
-
 router.post('/:cid/product/:pid', ValidarCarritoExistente, ValidarProductoExistente, async (req, res) => {
     try {
         const CartManager = req.app.get('CartManager')
-        const { cid, pid } = req.params
-        // Buscar el carrito por su ID
-        const cartExistente = await CartManager.getCartByCId(cid)
-        // Verifica si el producto ya está en el carrito
-        if (cartExistente && Array.isArray(cartExistente.arrayCart)) {
-            const productoEnCarrito = cartExistente.arrayCart.find(elem => elem.productId === pid)
-            if (productoEnCarrito) {
-                // Si ya existe, agrego 1
-                productoEnCarrito.quantity += 1
-            } else {
-                // Si el producto no está en el carrito, lo agrego con cantidad 1
-                cartExistente.arrayCart.push({ productId: pid, quantity: 1 })
-            }
-            // Guardar el carrito actualizado
-            await cartExistente.save()
-            res.status(200).json({ message: "Producto agregado al carrito con éxito" })  // HTTP 200 OK
-        } else {
-            res.status(404).json({ mesage: 'El carrito no existe o no esta definido correctamente' })
-        }
+        let idCart = +req.params.cid;
+        let idProd = +req.params.pid;
+        let quantity = 1;
+
+        await CartManager.addProductToCart(idCart, idProd, quantity);
+
+        res.status(200).json(`Se agregaron ${quantity} producto/s con ID ${idProd} al carrito con ID ${idCart}`)    // HTTP 200 OK
     } catch (err) {
         return res.status(500).json({
             message: err.message

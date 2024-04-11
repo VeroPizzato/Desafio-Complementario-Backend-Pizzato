@@ -13,7 +13,7 @@ class CartManager {
             throw new Error('must connect to mongodb!')
         }
         else {
-            const carts = await this.getCarts()
+            const carts = await this.getCarts()         
             CartManager.#ultimoIdCart = this.#getNuevoIdInicio(carts)
         }
     }
@@ -61,6 +61,22 @@ class CartManager {
         })
         console.log(nuevoCarrito)
     }  
+
+    addProductToCart = async (cid, pid, quantity) => {
+        const cart = await this.getCartByCId(cid)
+        const listadoProducts = cart.arrayCart;
+        const codeProduIndex = listadoProducts.findIndex(e => e.productId === pid);
+        if (codeProduIndex === -1) {
+            let productoNuevo = {
+                productId: pid,
+                quantity: quantity
+            }
+            listadoProducts.push(productoNuevo);
+        } else {
+            listadoProducts[codeProduIndex].quantity += quantity;
+        }
+        await CartModel.updateOne({id: cid}, cart)
+    }
 }
 
 module.exports = CartManager
