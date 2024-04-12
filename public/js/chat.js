@@ -5,6 +5,11 @@ let user;
 let chatBox = document.getElementById('chatBox');
 let messageLogs = document.getElementById('messageLogs');
 
+//expresión regular para validar un email
+const emailValido = email => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 // bloquear pantalla del usuario y pedirle un correo de usuario
 const { value: email } = Swal.fire({
     title: 'Identificate',
@@ -12,7 +17,7 @@ const { value: email } = Swal.fire({
     text: 'Ingresa tu e-mail para Identificarte',
     inputPlaceholder: 'Direccion de Email',
     inputValidator: (value) => {
-        return !value && 'Debes escribir un email para continuar!'
+        return (!value || !emailValido(value)) && 'Debes escribir un email para continuar!'
     },
     allowOutsideClick: false // impide que el usuario salga de la alerta al dar "click" fuera de la alerta
 }).then(result => {
