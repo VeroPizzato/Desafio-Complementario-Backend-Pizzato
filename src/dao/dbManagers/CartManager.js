@@ -13,7 +13,7 @@ class CartManager {
             throw new Error('must connect to mongodb!')
         }
         else {
-            const carts = await this.getCarts()         
+            const carts = await this.getCarts()
             CartManager.#ultimoIdCart = this.#getNuevoIdInicio(carts)
         }
     }
@@ -58,9 +58,8 @@ class CartManager {
         let nuevoCarrito = await CartModel.create({
             id: this.#getNuevoId(),
             arrayCart
-        })
-        console.log(nuevoCarrito)
-    }  
+        })       
+    }
 
     addProductToCart = async (cid, pid, quantity) => {
         const cart = await this.getCartByCId(cid)
@@ -75,7 +74,11 @@ class CartManager {
         } else {
             listadoProducts[codeProduIndex].quantity += quantity;
         }
-        await CartModel.updateOne({id: cid}, cart)
+        await CartModel.updateOne({ id: cid }, cart)
+    }
+
+    deleteCart = async (cid) => {
+        await CartModel.deleteOne({ id: cid });
     }
 }
 
