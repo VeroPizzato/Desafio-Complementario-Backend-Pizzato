@@ -125,6 +125,22 @@ async function validarProdActualizado(req, res, next) {
     next()
 }
 
+// Middleware para validacion de datos de un producto 
+async function validarProducto(req, res, next) {
+    const ProductManager = req.app.get('ProductManager')    
+    let prodId = +req.params.pid
+    if (isNaN(prodId)) {
+        res.status(400).json({ error: "Formato invalido." })
+        return
+    }
+    const producto = await ProductManager.getProductById(prodId)
+    if (!producto) {
+        res.status(404).json({ error: "Id inexistente!" })  // HTTP 404 => el ID es válido, pero no se encontró ese producto
+        return
+    }
+    next()
+}
+
 router.get('/', async (req, res) => {
     try {
         const ProductManager = req.app.get('ProductManager')
@@ -150,19 +166,15 @@ router.get('/', async (req, res) => {
     }
 })
 
-router.get('/:pid', async (req, res) => {    
+router.get('/:pid', validarProducto, async (req, res) => {    
     try {        
         const ProductManager = req.app.get('ProductManager')
-        const prodId  = +req.params.pid  
-        if (isNaN(prodId)){
-            res.status(400).json({ error: "Invalid number format" })
-            return
-        }
+        const prodId  = +req.params.pid        
         const producto = await ProductManager.getProductById(prodId)
-        if (!producto) {
-            res.status(404).json({ error: "Id inexistente!" })  // HTTP 404 => el ID es válido, pero no se encontró ese producto
-            return
-        }
+        // if (!producto) {
+        //     res.status(404).json({ error: "Id inexistente!" })  // HTTP 404 => el ID es válido, pero no se encontró ese producto
+        //     return
+        // }
         res.status(200).json(producto)    // HTTP 200 OK
     } catch (err) {
         return res.status(500).json({
@@ -178,20 +190,20 @@ router.post('/', validarNuevoProducto, async (req, res) => {
     return res.status(201).json({ success: true })
 })
 
-router.put('/:pid', validarProdActualizado, async (req, res) => {
+router.put('/:pid', validarProducto, validarProdActualizado, async (req, res) => {
     try {
         const ProductManager = req.app.get('ProductManager')
         const prodId = +req.params.pid        
         const datosAUpdate = req.body
-        if (isNaN(prodId)){
-            res.status(400).json({ error: "Invalid number format" })
-            return
-        }
-        const producto = await ProductManager.getProductById(prodId)
-        if (!producto) {
-            res.status(404).json({ error: "Id inexistente!" })  // HTTP 404 => el ID es válido, pero no se encontró ese producto
-            return
-        }
+        // if (isNaN(prodId)){
+        //     res.status(400).json({ error: "Invalid number format" })
+        //     return
+        // }
+        // const producto = await ProductManager.getProductById(prodId)
+        // if (!producto) {
+        //     res.status(404).json({ error: "Id inexistente!" })  // HTTP 404 => el ID es válido, pero no se encontró ese producto
+        //     return
+        // }
         const result = ProductManager.updateProduct(prodId, datosAUpdate)
         return res.status(200).json(result)
     } catch (err) {
@@ -201,19 +213,15 @@ router.put('/:pid', validarProdActualizado, async (req, res) => {
     }
 })
 
-router.delete('/:pid', async (req, res) => {
+router.delete('/:pid', validarProducto, async (req, res) => {
     try {
         const ProductManager = req.app.get('ProductManager')
-        const prodId = +req.params.pid  
-        if (isNaN(prodId)){
-            res.status(400).json({ error: "Invalid number format" })
-            return
-        }
+        const prodId = +req.params.pid       
         const producto = await ProductManager.getProductById(prodId)
-        if (!producto) {
-            res.status(404).json({ error: "Id inexistente!" })  // HTTP 404 => el ID es válido, pero no se encontró ese producto
-            return
-        }
+        // if (!producto) {
+        //     res.status(404).json({ error: "Id inexistente!" })  // HTTP 404 => el ID es válido, pero no se encontró ese producto
+        //     return
+        // }
         await ProductManager.deleteProduct(prodId)
         res.status(200).json({ message: "Producto Eliminado correctamente" })    // HTTP 200 OK
     }
